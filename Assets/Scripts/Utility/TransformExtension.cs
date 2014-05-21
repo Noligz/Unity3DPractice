@@ -154,7 +154,9 @@ public static class TransformExtension
     /// </summary>
     public static void DestroyAllChildren(this Transform parent)
     {
-        foreach (Transform child in parent)
-            Object.Destroy(child.gameObject);
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            GameObject.Destroy(parent.GetChild(i));
+        }
     }
 }

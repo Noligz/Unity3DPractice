@@ -3,9 +3,47 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-
 public static class GameObjectExtension
 {
+    /// <summary>
+    /// 实例化一个GameObject作为子GameObject
+    /// </summary>
+    /// <param name="prefab">if null, instantiate an empty GameObject</param>
+    public static GameObject AddChild(this GameObject parent, GameObject go, string name = null)
+    {
+        GameObject obj;
+        if (go != null)
+            obj = GameObject.Instantiate(go) as GameObject;
+        else
+            obj = new GameObject();
+        obj.transform.parent = parent.transform;
+        obj.transform.localPosition = Vector3.zero;
+        obj.transform.localRotation = Quaternion.identity;
+        obj.transform.localScale = Vector3.one;
+        obj.layer = parent.layer;
+        if (name != null)
+            obj.name = name;
+        return obj;
+    }
+
+    /// <summary>
+    /// 实例化一个空GameObject作为子GameObject，并绑定指定脚本
+    /// </summary>
+    public static T AddChild<T>(this GameObject parent) where T : MonoBehaviour
+    {
+        GameObject go = parent.AddChild(null, typeof(T).ToString());
+        return go.AddComponent<T>();
+    }
+
+    /// <summary>
+    /// 加载一个prefab并实例化为子GameObject
+    /// </summary>
+    public static GameObject AddChildPrefab(this GameObject parent, string prefabPath)
+    {
+        GameObject prefab = Resources.Load(prefabPath) as GameObject;
+        return parent.AddChild(prefab);
+    }
+
     static void SafelyEnableDisableComponent<T>(this GameObject obj, bool isEnable) where T : Behaviour
     {
         T comp = obj.GetComponentSafely<T>();
@@ -13,16 +51,25 @@ public static class GameObjectExtension
             comp.enabled = isEnable;
     }
 
+    /// <summary>
+    /// 不会报错地禁用Component
+    /// </summary>
     public static void SafelyDisableComponent<T>(this GameObject obj) where T : Behaviour
     {
         obj.SafelyEnableDisableComponent<T>(false);
     }
 
+    /// <summary>
+    /// 不会报错地启用Component
+    /// </summary>
     public static void SafelyEnableComponent<T>(this GameObject obj) where T : Behaviour
     {
         obj.SafelyEnableDisableComponent<T>(true);
     }
 
+    /// <summary>
+    /// 不会报错地获取Component
+    /// </summary>
     public static T GetComponentSafely<T>(this GameObject obj) where T : Behaviour
     {
         if (obj != null)
@@ -42,6 +89,9 @@ public static class GameObjectExtension
         }
         (new_component as Behaviour).enabled = (from as Behaviour).enabled;
     }
+    /// <summary>
+    /// 复制所有Component（除了Camera等）
+    /// </summary>
     public static void CopyAllComponent(this GameObject obj, GameObject from)
     {
         if (obj == null || from == null)
@@ -62,6 +112,14 @@ public static class GameObjectExtension
             if (isCopy)
                 obj.CopyComponent(comp);
         }
+    }
+
+    /// <summary>
+    /// 删除所有后代，自身不删除
+    /// </summary>
+    public static void DestroyAllChildren(this GameObject parent)
+    {
+        parent.transform.DestroyAllChildren();
     }
 
     public static bool GetBoundingBox(this GameObject obj, out Bounds boundingBox)
